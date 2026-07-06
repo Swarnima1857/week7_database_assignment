@@ -1,7 +1,7 @@
 # Week 7 Assignment
 
 
-# Embed vs Reference Justification
+# Schema Design with Embed vs Reference Justification
 
 
 - **Embed** when the data is bounded in size, always read together with its parent, and doesn't need to be queried independently.
