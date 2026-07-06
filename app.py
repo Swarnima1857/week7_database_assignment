@@ -21,7 +21,6 @@ app = FastAPI(title="Movie Ticket Booking System API")
 db = get_db()
 
 
-
 # Helper functions
 
 def serialize(doc):
@@ -44,6 +43,7 @@ def to_object_id(id_str):
         return ObjectId(id_str)
     except InvalidId:
         raise HTTPException(status_code=400, detail="Invalid ID format")
+
 
 
 # Pydantic models — define what a valid request body looks like
@@ -185,9 +185,7 @@ def delete_user(user_id: str):
     return {"deleted": result.deleted_count}
 
 
-
 # MOVIES
-
 
 @app.post("/movies", status_code=201)
 def create_movie(movie: MovieCreate):
@@ -223,7 +221,6 @@ def create_theater(theater: TheaterCreate):
 def get_theaters():
     return [serialize(t) for t in db.theaters.find()]
 
-
 # SHOWS
 
 @app.post("/shows", status_code=201)
@@ -253,7 +250,6 @@ def available_seats(show_id: str):
     return [s for s in show.get("seat_map", []) if s["status"] == "available"]
 
 
-# =========================================================
 # BOOKINGS
 
 @app.post("/bookings", status_code=201)
