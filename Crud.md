@@ -516,7 +516,6 @@ db.bookings.deleteOne({ _id: ObjectId("6a4b95403ac2189cde989edf") })
 { "acknowledged": true, "deletedCount": 1 }
 ```
 
-> Note: Deletion order matters conceptually — in a real system you'd typically delete/cancel a **booking** before deleting the **review**, and you would not delete a `user`, `movie`, or `theater` if bookings/reviews/shows still reference it, since MongoDB does not enforce foreign keys the way PostgreSQL does. This is deliberately shown as a trade-off in the comparison document.
 
 ### Delete Show Query
 ```javascript
