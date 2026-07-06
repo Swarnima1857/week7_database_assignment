@@ -1,6 +1,109 @@
 # Week 7 Assignment
-# CRUD Operation
 
+
+# Embed vs Reference Justification
+
+
+- **Embed** when the data is bounded in size, always read together with its parent, and doesn't need to be queried independently.
+- **Reference** when the data grows unbounded, is shared across multiple parents, or is updated independently of the parent.
+
+### 1. `users`
+```json
+{
+  "name": "Mr.Kieko",
+  "email": "kieko1@gmail.com",
+  "phone": "1234567890",
+  "addresses": [ { "label": "Home", "city": "Hmirpur", "pincode": "000000" } ],
+  "created_at": "..."
+}
+```
+- **`addresses` → Embedded.** A user has only a handful of addresses (1-3), they are always displayed together with the user's profile, and are never queried independently across users. Embedding avoids an unnecessary extra lookup.
+- **Bookings/reviews are NOT embedded here.** A user can make hundreds of bookings over time — embedding them would make the `users` document grow unbounded and eventually risk hitting MongoDB's 16MB document size limit. Instead, bookings/reviews **reference** the user's `_id`.
+
+### 2. `movies`
+```json
+{
+  "title": "Dhurandhar",
+  "genre": ["Action", "Thriller"],
+  "cast": ["Ranveer Singh", "Akshay Khanna", ...],
+  "duration_min": 180,
+  "release_date": "...",
+  "language": "Hindi"
+}
+```
+- **`genre` and `cast` → Embedded.** Both are small, fixed-size arrays that are always shown together with the movie details on any movie page. There's no need to query "all movies with actor X" often enough to justify a separate collection, and even if we did, `$unwind`/`$match` on the array handles it fine.
+
+### 3. `theaters`
+```json
+{
+  "name": "PVR Saket",
+  "city": "Delhi",
+  "screens": [
+    { "screen_no": 1, "capacity": 120, "type": "IMAX" },
+    { "screen_no": 2, "capacity": 80, "type": "Standard" }
+  ]
+}
+```
+- **`screens` → Embedded.** A theater has a small, bounded number of screens (typically 1-15). They never change independently of the theater and are always fetched together when displaying theater info. Embedding avoids a join for a very common read.
+
+### 4. `shows`
+```json
+{
+  "movie_id": "ObjectId(...)",
+  "theater_id": "ObjectId(...)",
+  "screen_no": 1,
+  "start_time": "...",
+  "price": 300,
+  "seat_map": [ { "seat_no": "A1", "status": "available" } ]
+}
+```
+- **`movie_id`, `theater_id` → Referenced.** The same movie plays in hundreds of shows across many theaters, and each theater hosts hundreds of shows. Embedding the full movie or theater document into every show would massively duplicate data — and if a movie's title were corrected, we'd have to update every single show document. Referencing keeps a single source of truth.
+- **`seat_map` → Embedded.** A show has a bounded number of seats (usually under 300), and the whole seat map is read and updated together as **one atomic unit** whenever a seat is booked. MongoDB's single-document atomic update (`updateOne` with a positional `$` operator) is ideal for this "lock this seat" pattern — no separate transaction needed.
+
+### 5. `bookings`
+```json
+{
+  "user_id": "ObjectId(...)",
+  "show_id": "ObjectId(...)",
+  "seats_booked": ["A1"],
+  "total_amount": 300,
+  "payment": { "status": "success", "method": "UPI", "txn_id": "TXN001" },
+  "booked_at": "..."
+}
+```
+- **`user_id`, `show_id` → Referenced.** A booking belongs to exactly one user and one show, but each user/show can have MANY bookings. The "many" side always references the "one" side — never the other way around, or the parent document would grow unbounded.
+- **`seats_booked`, `payment` → Embedded.** Both are small, specific to this one booking, never reused elsewhere, and always needed together whenever this booking/receipt is displayed. No benefit to normalizing them out.
+
+### 6. `reviews`
+```json
+{
+  "movie_id": "ObjectId(...)",
+  "user_id": "ObjectId(...)",
+  "rating": 4,
+  "comment": "Great action, amazing movie",
+  "created_at": "..."
+}
+```
+- **`movie_id`, `user_id` → Referenced.** A popular movie can receive thousands of reviews — embedding them inside the `movies` document would risk the 16MB size limit and slow down a simple movie-title lookup that doesn't need any reviews at all.
+
+### 7. `ai_summaries`
+```json
+{
+  "movie_id": "ObjectId(...)",
+  "summary_text": "...",
+  "sentiment": "mixed",
+  "based_on_review_ids": ["ObjectId(...)"],
+  "model_used": "claude-sonnet-5",
+  "generated_at": "..."
+}
+```
+- **`movie_id` → Referenced.** One summary maps to one movie, but summaries can be regenerated/versioned independently of the movie document (e.g., when new reviews come in or a better model is used).
+- **`based_on_review_ids` → Referenced array, not embedded.** The underlying reviews already exist as full documents in the `reviews` collection — embedding them again here would duplicate data. We only keep pointers for traceability/auditing of what the AI summarized.
+- **Kept as its own separate collection** (not embedded inside `movies`) because AI summaries need independent versioning/history as new reviews arrive — this is much easier to manage as separate documents than as a repeatedly-mutated sub-field inside `movies`.
+
+---
+
+# Crud Operations
 ---
 ## Insert
 ### Insert User Query
