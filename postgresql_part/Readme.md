@@ -1,7 +1,7 @@
 # PostgreSQL
  ---
  ```sql
- CREATE DATABASE instadb;
+ CREATE DATABASE person;
  ```
  ---
  ---
@@ -12,11 +12,35 @@
 ```sql
 SELECT*FROM person;
 ```
-![
-Output
-](postgresql_part/Image/image.png)
+## Output
+(![Output](Image/image1.png))
 
 ---
 
+---
+# UPDATING DATA IN TABLE
 
+## SQL Query
+
+```sql
+UPDATE person
+SET CITY='Kanpur'
+WHERE id=101;
+```
+## Output
+(![OUTPUT](Image/image.png))
+
+---
+# DELETE DATA IN TABLE
+
+## SQL Query
+
+```sql
+DELETE FROM person
+WHERE id=2;
+```
+## Output
+(![Output](Image/image2.png))
+
+---
 
