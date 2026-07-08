@@ -12,5 +12,10 @@
 ```sql
 SELECT*FROM person;
 ```
-(<Image/read data.png>)
+![
+
+](image.png)
+
+---
+
 
