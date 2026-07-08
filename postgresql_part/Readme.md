@@ -13,8 +13,8 @@
 SELECT*FROM person;
 ```
 ![
-
-](image.png)
+Output
+](/Users/swarnima/Desktop/Week_7database_assignment/postgresql_part/Image/image.png)
 
 ---
 
